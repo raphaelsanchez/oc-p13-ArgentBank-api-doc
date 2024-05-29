@@ -117,6 +117,8 @@ paths:
           description: Internal Server Error
   /transactions/monthly:
     get:
+      security:
+        - Bearer: []
       tags:
         - "Transactions"
       summary: "View transactions grouped by account"
