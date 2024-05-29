@@ -1,18 +1,14 @@
 swagger: "2.0"
 info:
-  title: Bank Argent API documentation
+  title: ArgentBank API documentation
   description: Contains all available API endpoints in this codebase
   version: "1.0.0"
   termsOfService: "http://swagger.io/terms/"
 host: localhost:3001
-basePath: /api/v1
+basePath: /api/v2
 schemes:
   - http
-securityDefinitions:
-  Bearer:
-    type: apiKey
-    name: Authorization
-    in: header
+  - https
 paths:
   /user/login:
     post:
@@ -70,13 +66,8 @@ paths:
         - User Module
       summary: User Profile API
       description: API for fetching a user profile
-      parameters:
-        - in: header
-          name: Authorization
-          description: Attach Bearer JWT token
-          required: true
-      produces:
-        - application/json
+      #produces:
+      # - application/json
       responses:
         "200":
           description: User profile retrieved successully
@@ -94,10 +85,6 @@ paths:
       summary: User Profile API
       description: API for updating a user profile
       parameters:
-        - in: header
-          name: Authorization
-          description: Attach Bearer JWT token
-          required: true
         - in: body
           name: body
           description: Update user profile attributes
@@ -115,72 +102,250 @@ paths:
           description: Invalid Fields
         "500":
           description: Internal Server Error
-  /transactions/monthly:
+
+  # ROUTE PHASE 2
+  /user/accounts:
     get:
       security:
         - Bearer: []
       tags:
-        - "Transactions"
-      summary: "View transactions grouped by account"
-      description: "Returns all transactions for the current month, grouped by account for the authenticated user."
-      parameters:
-        - name: "month"
-          in: "query"
-          description: "Month for which to retrieve transactions (`YYYY-MM` format)."
-          required: false
-          type: "string"
-        - name: "accountId"
-          in: "query"
-          description: "Account ID to filter transactions by specific account."
-          required: false
-          type: "string"
-        - name: "Authorization"
-          in: "header"
-          description: "JWT token for authentication."
-          required: true
-          type: "string"
+        - Account Module
+      summary: Accounts list
+      description: Return all accounts for the user
       responses:
-        200:
-          description: "List of transactions for the current month."
+        "200":
+          description: OK
           schema:
-            type: "object"
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                type:
+                  type: string
+                  enum:
+                    - Checking
+                    - Saving
+                    - Credit Card
+        "404":
+          description: No accounts found for the user.
+  /user/accounts/{accountId}:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module
+      summary: Viewing account transactions
+      description: Returns all transactions for an account for the current month by default.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          type: string
+          description: Account ID for which to retrieve transactions.
+        - name: month
+          in: query
+          required: false
+          type: string
+          format: yyyy-MM
+          description: Month for which to retrieve transactions (YYYY-MM format), defaults to the current month.
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
             properties:
               transactions:
-                type: "object"
-                additionalProperties:
-                  type: "array"
-                  items:
-                    $ref: "#/definitions/Transaction"
-          examples:
-            application/json:
-              transactions:
-                checking_account:
-                  - id: 1
-                    date: "2024-05-01"
-                    amount: -45.50
-                    category: "Shopping"
-                    type: "Electronic"
-                    description: "Purchase at XYZ Supermarket"
-                    note: "Purchase note"
-                  - id: 2
-                    date: "2024-05-03"
-                    amount: -15.00
-                    category: "Transport"
-                    type: "Electronic"
-                    description: "Transport card recharge"
-                    note: "Note of the purchase"
-                savings_account:
-                  - id: 3
-                    date: "2024-05-02"
-                    amount: 1500.00
-                    category: "Salary"
-                    type: "Electronic"
-                    description: "Monthly pay"
-                    note: "Monthly pay note"
-        401:
-          description: "Missing or invalid JWT token."
-        404:
-          description: "No transactions found for the specified month and/or account."
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      format: int64
+                    date:
+                      type: string
+                      format: date
+                    amount:
+                      type: number
+                      format: double
+                    category:
+                      type: string
+                    description:
+                      type: string
+        "404":
+          description: No transactions found for the specified account and/or month.
+  /user/accounts/{accountId}/{transactionId}:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module
+      summary: Viewing transaction details
+      description: Returns details of a specific transaction for a given account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          type: string
+          description: ID of the account to which the transaction belongs.
+        - name: transactionId
+          in: path
+          required: true
+          type: integer
+          description: ID of the transaction to retrieve.
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              date:
+                type: string
+                format: date
+              amount:
+                type: number
+                format: double
+              category:
+                type: string
+              description:
+                type: string
+              accountId:
+                type: string
+        "404":
+          description: Transaction not found for the specified ID.
+    put:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module
+      summary: Edit a transaction
+      description: Edit the information of an existing transaction for a given account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          type: string
+          description: ID of the account to which the transaction belongs.
+        - name: transactionId
+          in: path
+          required: true
+          type: integer
+          description: ID of the transaction to modify.
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              amount:
+                type: number
+                format: double
+              category:
+                type: string
+              description:
+                type: string
+      responses:
+        "200":
+          description: Transaction modified successfully.
+          schema:
+            type: object
+            properties:
+              account:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                    example: 123456
+                  name:
+                    type: string
+                    example: "John Doe"
+                  balance:
+                    type: number
+                    format: double
+                    example: 1000.00
+                  transactions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          format: int64
+                          example: 78910
+                        date:
+                          type: string
+                          format: date
+                          example: "2022-01-01"
+                        amount:
+                          type: number
+                          format: double
+                          example: 100.00
+                        category:
+                          type: string
+                          example: "Groceries"
+                        description:
+                          type: string
+                          example: "Weekly grocery shopping"
+        "400":
+          description: Invalid data provided.
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "Error"
+              message:
+                type: string
+                example: "Invalid data provided."
+        "404":
+          description: Transaction not found for the specified ID.
+    delete:
+      security:
+        - Bearer: []
+      tags:
+        - Account Module
+      summary: Deleting a transaction
+      description: Deletes an existing transaction for a given account.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          type: string
+          description: ID of the account to which the transaction belongs.
+        - name: transactionId
+          in: path
+          required: true
+          type: integer
+          description: ID of the transaction to delete.
+      responses:
+        "200":
+          description: Transaction deleted successfully.
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "Success"
+              message:
+                type: string
+                example: "Account successfully deleted."
+        "404":
+          description: Transaction not found for the specified ID.
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
 definitions:
   User:
     properties:
@@ -196,6 +361,9 @@ definitions:
       lastName:
         type: string
         description: user last name
+      userName:
+        type: string
+        description: user public name
   Login:
     properties:
       email:
@@ -226,29 +394,21 @@ definitions:
   UserProfile:
     type: object
     properties:
-      firstName:
+      userName:
         type: string
-      lastName:
-        type: string
-  Transaction:
-    type: "object"
+  Account:
+    type: object
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-      date:
-        type: "string"
-        format: "date"
-      amount:
-        type: "number"
-        format: "double"
-      category:
-        type: "string"
-      type:
-        type: "string"
-      description:
-        type: "string"
-      note:
-        type: "string"
-      accountId:
-        type: "string"
+      accountID:
+        type: string
+        description: account ID
+      accountName:
+        type: string
+        description: account name
+      accountCurrency:
+        type: string
+        description: account currency
+      currentBalance:
+        type: number
+        description: current account balance
+        format: double
