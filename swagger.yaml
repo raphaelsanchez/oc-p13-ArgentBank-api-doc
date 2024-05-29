@@ -8,6 +8,11 @@ host: localhost:3001
 basePath: /api/v1
 schemes:
   - http
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
 paths:
   /user/login:
     post:
@@ -110,11 +115,70 @@ paths:
           description: Invalid Fields
         "500":
           description: Internal Server Error
-securityDefinitions:
-  Bearer:
-    type: apiKey
-    name: Authorization
-    in: header
+  /transactions/monthly:
+    get:
+      tags:
+        - "Transactions"
+      summary: "View transactions grouped by account"
+      description: "Returns all transactions for the current month, grouped by account for the authenticated user."
+      parameters:
+        - name: "month"
+          in: "query"
+          description: "Month for which to retrieve transactions (`YYYY-MM` format)."
+          required: false
+          type: "string"
+        - name: "accountId"
+          in: "query"
+          description: "Account ID to filter transactions by specific account."
+          required: false
+          type: "string"
+        - name: "Authorization"
+          in: "header"
+          description: "JWT token for authentication."
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "List of transactions for the current month."
+          schema:
+            type: "object"
+            properties:
+              transactions:
+                type: "object"
+                additionalProperties:
+                  type: "array"
+                  items:
+                    $ref: "#/definitions/Transaction"
+          examples:
+            application/json:
+              transactions:
+                checking_account:
+                  - id: 1
+                    date: "2024-05-01"
+                    amount: -45.50
+                    category: "Shopping"
+                    type: "Electronic"
+                    description: "Purchase at XYZ Supermarket"
+                    note: "Purchase note"
+                  - id: 2
+                    date: "2024-05-03"
+                    amount: -15.00
+                    category: "Transport"
+                    type: "Electronic"
+                    description: "Transport card recharge"
+                    note: "Note of the purchase"
+                savings_account:
+                  - id: 3
+                    date: "2024-05-02"
+                    amount: 1500.00
+                    category: "Salary"
+                    type: "Electronic"
+                    description: "Monthly pay"
+                    note: "Monthly pay note"
+        401:
+          description: "Missing or invalid JWT token."
+        404:
+          description: "No transactions found for the specified month and/or account."
 definitions:
   User:
     properties:
@@ -164,3 +228,25 @@ definitions:
         type: string
       lastName:
         type: string
+  Transaction:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      date:
+        type: "string"
+        format: "date"
+      amount:
+        type: "number"
+        format: "double"
+      category:
+        type: "string"
+      type:
+        type: "string"
+      description:
+        type: "string"
+      note:
+        type: "string"
+      accountId:
+        type: "string"
