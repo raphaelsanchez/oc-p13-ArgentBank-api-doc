@@ -128,6 +128,13 @@ paths:
                     - Checking
                     - Saving
                     - Credit Card
+                totalBalance:
+                  type: number
+                  format: double
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Unauthorized"
         "404":
           description: No accounts found for the user.
   /user/accounts/{accountId}:
@@ -167,13 +174,21 @@ paths:
                     date:
                       type: string
                       format: date
+                    description:
+                      type: string
                     amount:
                       type: number
                       format: double
+                    type:
+                      type: string
                     category:
                       type: string
-                    description:
+                    notes:
                       type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Unauthorized"
         "404":
           description: No transactions found for the specified account and/or month.
   /user/accounts/{accountId}/{transactionId}:
@@ -193,7 +208,7 @@ paths:
         - name: transactionId
           in: path
           required: true
-          type: integer
+          type: string
           description: ID of the transaction to retrieve.
       responses:
         "200":
@@ -207,15 +222,23 @@ paths:
               date:
                 type: string
                 format: date
+              description:
+                type: string
               amount:
                 type: number
                 format: double
+              type:
+                type: string
               category:
                 type: string
-              description:
+              note:
                 type: string
               accountId:
                 type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Unauthorized"
         "404":
           description: Transaction not found for the specified ID.
     put:
@@ -239,18 +262,22 @@ paths:
         - name: body
           in: body
           required: true
+          type: object
+          description: Transaction details to modify.
           schema:
             type: object
             properties:
               date:
                 type: string
                 format: date
+              description:
+                type: string
               amount:
                 type: number
                 format: double
               category:
                 type: string
-              description:
+              notes:
                 type: string
       responses:
         "200":
@@ -285,16 +312,23 @@ paths:
                           type: string
                           format: date
                           example: "2022-01-01"
+                        description:
+                          type: string
+                          example: "Weekly grocery shopping"
                         amount:
                           type: number
                           format: double
                           example: 100.00
+                        type:
+                          type: string
+                          example: "Debit"
                         category:
                           type: string
                           example: "Groceries"
-                        description:
+                        notes:
                           type: string
-                          example: "Weekly grocery shopping"
+                          example: "Some notes here"
+
         "400":
           description: Invalid data provided.
           schema:
@@ -306,9 +340,27 @@ paths:
               message:
                 type: string
                 example: "Invalid data provided."
+              body:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                          example: "amount"
+                        message:
+                          type: string
+                          example: "Amount must be a positive number."
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Unauthorized"
         "404":
           description: Transaction not found for the specified ID.
-    delete:
+    patch:
       security:
         - Bearer: []
       tags:
@@ -326,6 +378,16 @@ paths:
           required: true
           type: integer
           description: ID of the transaction to delete.
+        - name: category
+          in: query
+          required: false
+          type: string
+          description: Category of the transaction to edit or delete.
+        - name: notes
+          in: query
+          required: false
+          type: string
+          description: Notes of the transaction to edit or delete.
       responses:
         "200":
           description: Transaction deleted successfully.
@@ -338,6 +400,57 @@ paths:
               message:
                 type: string
                 example: "Account successfully deleted."
+              body:
+                type: object
+                properties:
+                  account:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        format: int64
+                        example: 123456
+                      name:
+                        type: string
+                        example: "John Doe"
+                      balance:
+                        type: number
+                        format: double
+                        example: 1000.00
+                      transactions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              format: int64
+                              example: 78910
+                            date:
+                              type: string
+                              format: date
+                              example: "2022-01-01"
+                            description:
+                              type: string
+                              example: "Weekly grocery shopping"
+                            amount:
+                              type: number
+                              format: double
+                              example: 100.00
+                            type:
+                              type: string
+                              example: "Debit"
+                            category:
+                              type: string
+                              example: "Groceries"
+                            notes:
+                              type: string
+                              example: "Some notes here"
+
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Unauthorized"
         "404":
           description: Transaction not found for the specified ID.
 
@@ -412,3 +525,26 @@ definitions:
         type: number
         description: current account balance
         format: double
+  Unauthorized:
+    type: object
+    properties:
+      status:
+        type: integer
+        example: 401
+      message:
+        type: string
+        example: "Unauthorized"
+      body:
+        type: object
+        properties:
+          errors:
+            type: array
+            items:
+              type: object
+              properties:
+                field:
+                  type: string
+                  example: "token"
+                message:
+                  type: string
+                  example: "Invalid token provided."

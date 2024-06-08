@@ -34,9 +34,9 @@ Utilisez ce point de terminaison pour supprimer un compte spécifique. Remplacez
 
 Utilisez ce point de terminaison pour récupérer une transaction spécifique d'un compte donné. Remplacez `{accountId}` par l'ID du compte et `{transactionId}` par l'ID de la transaction que vous souhaitez récupérer.
 
-#### DELETE /user/accounts/{accountId}/{transactionId}
+#### PATCH /user/accounts/{accountId}/{transactionId}
 
-Utilisez ce point de terminaison pour supprimer une transaction spécifique d'un compte donné. Remplacez `{accountId}` par l'ID du compte et `{transactionId}` par l'ID de la transaction que vous souhaitez supprimer.
+Utilisez ce point de terminaison pour modifier ou supprimer des information pour une transaction spécifique d'un compte donné. Remplacez `{accountId}` par l'ID du compte et `{transactionId}` par l'ID de la transaction que vous souhaitez supprimer.
 
 ## Codes d'erreur
 
